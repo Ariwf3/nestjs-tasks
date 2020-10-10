@@ -12,5 +12,12 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   database: "databaseName",
   // Tous les fichiers dans le dossier source qui finissent par entity.ts ou js seront pris en compte
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  synchronize: false
+  synchronize: false,
+  migrations: ["migration/**/*.ts"],
+  migrationsTableName: "migrations_typeorm",
+  migrationsRun: true,
+  cli: {
+      "migrationsDir": "migrations"
+  },
+  logging: true
 }
