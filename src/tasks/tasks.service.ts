@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TaskRepository } from './task.repository';
 import { Task } from './task.entity';
 import { DeleteResult } from 'typeorm';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class TasksService {
@@ -15,13 +16,17 @@ export class TasksService {
     private taskRepository: TaskRepository
   ){}
 
-  async getAll(filterDto: GetTasksFilterDto): Promise<Task[]> {
-    return this.taskRepository.getAll(filterDto)
+  async getAll(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
+    return this.taskRepository.getAll(filterDto, user)
     
   }
 
-  async getOne(id: number): Promise<Task>{
-    const taskFound = await this.taskRepository.findOne(id)
+  async getOne(
+      id: number,
+      user: User
+    ): Promise<Task> {
+      
+    const taskFound = await this.taskRepository.findOne({ id, userId: user.id })
 
     if (!taskFound) {
        throw new NotFoundException(`Task with Id ${id} not found !`);
@@ -31,20 +36,16 @@ export class TasksService {
     return taskFound
   }
   
-  async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const { title, description } = createTaskDto
-
-    const task = new Task()
-    task.title = title
-    task.description = description
-    task.status = TaskStatus.OPEN
-    await task.save()
-
-    return task;
+  async create(createTaskDto: CreateTaskDto, user: User): Promise<Task> {
+    return this.taskRepository.createTask(createTaskDto, user)
   }
 
-  async update(id: number, status: TaskStatus) {
-    const taskFound = await this.getOne(id)
+  async update(
+    id: number,
+    status: TaskStatus,
+    user: User
+    ) {
+    const taskFound = await this.getOne(id, user)
 
     taskFound.status = status
 
@@ -55,18 +56,19 @@ export class TasksService {
     return taskFound
   }
 
-  async delete(id: number) : Promise<DeleteResult> {
+  async delete(id: number, user: User) : Promise<DeleteResult> {
     // const taskFound = await this.taskRepository.findOne(id)
 
     // if (!taskFound) {
     //    throw new NotFoundException(`Task with Id ${id} not found !`);
     // }
 
-    // Avec methode delete de typeorm moins d'opérations
+    
     
     // this.taskRepository.remove(taskFound)
 
-    const taskFound = await this.taskRepository.delete(id)
+    // Avec methode delete de typeorm moins d'opérations
+    const taskFound = await this.taskRepository.delete({id, userId : user.id })
 
     if (taskFound.affected === 0) {
       throw new NotFoundException(`Task with Id ${id} not found !`);
